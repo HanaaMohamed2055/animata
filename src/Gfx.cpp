@@ -104,7 +104,7 @@ namespace gfx
         void Draw(const IndexBuffer& ib, draw::DRAW_MODE drawMode)
         {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib.handle);
-            glDrawElements(MapDrawModeToGLEnum(drawMode), ib.count, GL_UNSIGNED_INT, 0);
+            glDrawElements(MapDrawModeToGLEnum(drawMode), static_cast<unsigned int>(ib.m_data.size()), GL_UNSIGNED_INT, 0);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_ZERO);
         }
 
@@ -113,10 +113,11 @@ namespace gfx
             glDrawArrays(MapDrawModeToGLEnum(drawMode), 0, (GLsizei)vertexCount);
         }
 
-        void DrawInstanced(const IndexBuffer& ib, draw::DRAW_MODE drawMode, unsigned instanceCount)
+        void DrawInstanced(const IndexBuffer& ib, draw::DRAW_MODE drawMode, unsigned int instanceCount)
         {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib.handle);
-            glDrawElementsInstanced(MapDrawModeToGLEnum(drawMode), ib.count, GL_UNSIGNED_INT, 0, instanceCount);
+            glDrawElementsInstanced(MapDrawModeToGLEnum(drawMode), static_cast<unsigned int>(ib.m_data.size()),
+                GL_UNSIGNED_INT, 0, instanceCount);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_ZERO);
         }
 

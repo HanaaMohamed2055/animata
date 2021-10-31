@@ -39,11 +39,15 @@ namespace gfx
         {
             std::string vertexShader = utils::ReadFile(vertexShaderPath);
             std::string fragmentShader = utils::ReadFile(fragmentShaderPath);
+            Shader(vertexShader, fragmentShader);
+        }
 
+        Shader(const std::string& vertexShader, const std::string& fragmentShader)
+        {
             // Compile
             unsigned int vHandle = CompileShader(vertexShader.c_str(), "Vertex");
             unsigned int fHandle = CompileShader(fragmentShader.c_str(), "Fragment");
-            
+
             // Link
             if (vHandle != 0 && fHandle != 0)
             {
@@ -170,8 +174,12 @@ namespace gfx
 
         VertexBuffer(const std::vector<T>& data)
         {
+            handle = 0;
             glGenBuffers(1, &handle);
-            Upload(data);
+            if (!data.empty())
+            {
+                Upload(data);
+            }
         }
 
         ~VertexBuffer()
@@ -228,22 +236,25 @@ namespace gfx
 
     struct IndexBuffer
     {
-        IndexBuffer(std::vector<unsigned int>& data)
+        IndexBuffer(const std::vector<unsigned int>& data)
         {
             glGenBuffers(1, &handle);
-            Update(data.data(), static_cast<unsigned int>(data.size()));
+            if (!data.empty())
+            {
+                Update(data);
+            }
         }
 
-        void Update(unsigned int* data, unsigned int len)
+        void Update(const std::vector<unsigned int>& data)
         {
-            count = len;
+            m_data = data;
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, len * sizeof(unsigned int), data, GL_STATIC_DRAW);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_data.size() * sizeof(unsigned int), m_data.data(), GL_STATIC_DRAW);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_ZERO);
         }
 
         unsigned int handle;
-        unsigned count;
+        std::vector<unsigned int> m_data;
     };
 
     namespace draw
@@ -262,7 +273,7 @@ namespace gfx
         void Draw(const IndexBuffer& ib, draw::DRAW_MODE drawMode);
         void Draw(unsigned int vertexCount, draw::DRAW_MODE drawMode);
         void DrawInstanced(const IndexBuffer& ib, draw::DRAW_MODE drawMode, unsigned int instanceCount);
-        void DrawInstanced(unsigned int vertexCount, draw::DRAW_MODE drawMode, unsigned instanceCount);
+        void DrawInstanced(unsigned int vertexCount, draw::DRAW_MODE drawMode, unsigned int instanceCount);
     }
 
     struct Texture

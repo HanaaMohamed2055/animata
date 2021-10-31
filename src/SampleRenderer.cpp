@@ -10,7 +10,7 @@ void SampleRenderer::Initialize()
 {
     mRotation = 45.0f;
     mShader = new Shader("D:/projects/animation_system/src/Shaders/static.vert", "D:/projects/animation_system/src/Shaders/static.frag");
-    mDisplayTexture = new Texture("D:/projects/animation_system/src/Assets/uv.png");
+    mDisplayTexture = new Texture("D:/projects/animation_system/assets/uv.png");
 
     std::vector<vec3> positions;
     positions.push_back(vec3(-1, -1, 0));

@@ -3,6 +3,7 @@
 #define WIN32_EXTRA_LEAN
 
 #include "glad.h"
+#include "DebugRenderer.h"
 #include "SampleRenderer.h"
 
 #undef APIENTRY
@@ -86,7 +87,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
 {
-    gApp = new SampleRenderer();
+    gApp = new DebugRenderer();
 
     WNDCLASSEX wndClass;
     wndClass.cbSize = sizeof(WNDCLASSEX);

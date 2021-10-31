@@ -62,7 +62,7 @@ namespace gltf
 
         void GetScalarValues(std::vector<float>& out, const unsigned int compCount, const cgltf_accessor& inAccessor)
         {
-            out.resize(compCount + inAccessor.count);
+            out.resize(compCount * inAccessor.count);
 
             for (cgltf_size i = 0; i < inAccessor.count; ++i)
             {
@@ -104,7 +104,7 @@ namespace gltf
                 const unsigned int idx = i * compCount;
                 result.frames[i].time = times[i];
                 result.frames[i].in = samplerBicubic ? T(val[idx + N]) : 0.0f;
-                result.frames[i].value = T(val[idx]);
+                result.frames[i].value = T(val.data() + idx);
                 result.frames[i].out = samplerBicubic ? T(val[idx + N]) : 0.0f;
             }
         }
@@ -174,6 +174,54 @@ namespace gltf
         return result;
     }
 
+    // TODO: This needs to be optimized
+    animation::Pose LoadBindPose(cgltf_data* data)
+    {
+        animation::Pose restPose = LoadRestPose(data);
+        unsigned int boneCount = restPose.Size();
+        std::vector<math::Transform> worldBindPoses(boneCount);
+        // Default initialization
+        for (unsigned int i = 0; i < boneCount; ++i)
+        {
+            worldBindPoses[i] = restPose.GlobalTransform(i);
+        }
+
+        // Load inverse bind matrices from gltf file and convert them to bind matrices
+        // Loop through each skinned mesh in the gltf file
+        unsigned int skinCount = (unsigned int)data->skins_count;
+        for (unsigned int i = 0; i < skinCount; ++i)
+        { 
+            cgltf_skin* skin = &(data->skins[i]);
+            std::vector<float> invBindMatrices;
+            helper::GetScalarValues(invBindMatrices, 16, *skin->inverse_bind_matrices);
+
+            unsigned int jointCount = (unsigned int)skin->joints_count;
+            for (unsigned int j = 0; j < jointCount; ++j)
+            {
+                float* matrix = &(invBindMatrices[j * 16]);
+                math::mat4 invBindMatrix = math::mat4(matrix);
+                math::mat4 bindMatrix = inverse(invBindMatrix);
+                math::Transform bindTransform = TransformFromMatrix(bindMatrix);
+                cgltf_node* jointNode = skin->joints[j];
+                unsigned int jointIndex = helper::GetNodeIndex(jointNode, data->nodes, boneCount);
+                worldBindPoses[jointIndex] = bindTransform;
+            }
+        }
+
+        // Move each joint to the local space of its parent
+        animation::Pose bindPose = restPose;
+        for (unsigned int i = 0; i < boneCount; ++i)
+        {
+            int p = bindPose.parents[i];
+            if (p >= 0)
+            {
+                math::Transform parentTransform = worldBindPoses[p];
+                bindPose.joints[i] = math::combine(math::inverse(parentTransform), worldBindPoses[i]);
+            }
+        }
+        return bindPose;
+    }
+
     std::vector<std::string> LoadJointNames(cgltf_data* data)
     {
         unsigned int boneCount = (unsigned int)data->nodes_count;
@@ -230,7 +278,20 @@ namespace gltf
                 // TODO- weights
             }
             clips[i].RecalculateDuration();
+            clips[i].looping = true;
             // TOOD - clip looping ?
         }
     }
+
+    skin::Skeleton LoadSkeleton(cgltf_data* data)
+    {
+        skin::Skeleton result;
+        result.restPose = LoadRestPose(data);
+        result.bindPose = LoadBindPose(data);
+        result.jointNames = LoadJointNames(data);
+        result.UpdateInverseBindPose();
+
+        return result;
+    }
 }
+

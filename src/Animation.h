@@ -26,7 +26,7 @@ namespace animation
 
         inline math::Quaternion Interpolate(const math::Quaternion& a, const math::Quaternion& b, const float t)
         {
-            math::Quaternion result = math::mix(a, b, t);
+            math::Quaternion result = math::mix(normalized(a), normalized(b), t);
             if (math::dot(a, b) < 0)
             {
                 result = math::mix(a, -b, t);
@@ -127,7 +127,7 @@ namespace animation
         {
             T value;
             int currentFrameIndex = GetFrameIndex(time, looping);
-            if (currentFrameIndex < 0 || currentFrameIndex >= frames.size())
+            if (currentFrameIndex < 0 || currentFrameIndex >= (int)(frames.size() - 1))
             {
                 return value;
             }
@@ -218,6 +218,7 @@ namespace animation
                 if (time >= frames[i].time)
                 {
                     result = i;
+                    break;
                 }
             }
             return result;
@@ -437,7 +438,7 @@ namespace animation
             return joints[index];
         }
 
-        inline math::Transform GlobalTransform(unsigned int index)
+        inline math::Transform GlobalTransform(unsigned int index) const
         {
             math::Transform result = joints[index];                      
             for (int parent = parents[index]; parent >= 0; parent = parents[parent])

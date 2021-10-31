@@ -364,21 +364,21 @@ namespace math
                     M4V4D(3, v.v[0], v.v[1], v.v[2], v.v[3]));
     }
 
-    inline vec3 transformVector(const mat4& m, const vec3& v)
+    inline vec3 TransformVector(const mat4& m, const vec3& v)
     {
         return vec3(M4V4D(0, v.v[0], v.v[1], v.v[2], 0.0f),
                     M4V4D(1, v.v[0], v.v[1], v.v[2], 0.0f),
                     M4V4D(2, v.v[0], v.v[1], v.v[2], 0.0f));
     }
 
-    inline vec3 transformPoint(const mat4& m, const vec3& v)
+    inline vec3 TransformPoint(const mat4& m, const vec3& v)
     {
         return vec3(M4V4D(0, v.v[0], v.v[1], v.v[2], 1.0f),
                     M4V4D(1, v.v[0], v.v[1], v.v[2], 1.0f),
                     M4V4D(2, v.v[0], v.v[1], v.v[2], 1.0f));
     }
 
-    inline vec3 transformPoint(const mat4& m, const vec3& v, float& w)
+    inline vec3 TransformPoint(const mat4& m, const vec3& v, float& w)
     {
         float w_ = w;
         w = M4V4D(3, v.v[0], v.v[1], v.v[2], w_);
@@ -480,7 +480,8 @@ namespace math
 
         inline Quaternion(float data[4])
             :x(data[0]), y(data[1]), z(data[2]), w(data[3])
-        {}
+        {
+        }
     };
 
     inline Quaternion quaternionFromAngleAxis(const float angle, const vec3& axis)
