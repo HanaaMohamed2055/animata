@@ -88,10 +88,13 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\src\Shaders\static.frag">
+    <None Include="..\src\Shaders\static.vert">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="..\src\Shaders\static.vert">
+    <None Include="..\src\Shaders\lit.frag">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\src\Shaders\skin.vert">
       <Filter>Resource Files\Shaders</Filter>
     </None>
   </ItemGroup>

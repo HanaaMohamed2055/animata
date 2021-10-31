@@ -5,6 +5,7 @@
 #include "gltf.h"
 #include "Transform.h"
 #include "Animation.h"
+#include "Skinning.h"
 
 #include <iostream>
 #include <string>
@@ -108,6 +109,72 @@ namespace gltf
                 result.frames[i].out = samplerBicubic ? T(val[idx + N]) : 0.0f;
             }
         }
+
+        void MeshFromAttributes(skin::AnimatedMesh& mesh, cgltf_attribute& attribute, cgltf_skin* skin,
+            cgltf_node* nodes, unsigned int nodeCount)
+        {
+            cgltf_attribute_type attribType = attribute.type;
+            cgltf_accessor& accessor = *attribute.data;
+
+            unsigned int componentCount = 0;
+            switch (accessor.type)
+            {
+            case cgltf_type_vec2:
+                componentCount = 2;
+                break;
+            case cgltf_type_vec3:
+                componentCount = 3;
+                break;
+            case cgltf_type_vec4:
+                componentCount = 4;
+                break;
+            default:
+                assert(false);
+            }
+
+            std::vector<float> values;
+            GetScalarValues(values, componentCount, accessor);
+            unsigned int accessorCount = static_cast<unsigned int>(accessor.count);
+            for (unsigned int i = 0; i < accessorCount; ++i)
+            {
+                unsigned int index = i * componentCount;
+                switch (attribType)
+                {
+                case cgltf_attribute_type_position:
+                    mesh.mPositions.push_back(math::vec3(values[index], values[index + 1], values[index + 2]));
+                    break;
+                case cgltf_attribute_type_texcoord:
+                    mesh.mTextureCoordinates.push_back(math::vec2(values[index], values[index + 1]));
+                    break;
+                case cgltf_attribute_type_weights:
+                    mesh.mWeights.push_back(math::vec4(values[index], values[index + 1], values[index + 2], values[index + 3]));
+                    break;
+                case cgltf_attribute_type_normal:
+                {
+                    math::vec3 normal = math::vec3(values[index], values[index + 1], values[index + 2]);
+                    if (math::lengthSquared(normal) < 0.0000001f)
+                    {
+                        normal = math::vec3(0, 1, 0);
+                    }
+                    mesh.mNormals.push_back(normal);
+                }
+                    break;
+                case cgltf_attribute_type_joints:
+                    // Indices are skin relative, relative to the joints array in the gltf file
+                    // We need to make them relative to node hierarchy instead.
+                    // Add 0.5 to round before casting to integers to avoid errors.
+                    math::ivec4 joint((int)(values[index] + 0.5f), (int)(values[index + 1] + 0.5f),
+                        (int)(values[index + 2] + 0.5f), (int)(values[index + 3] + 0.5f));
+                    for (unsigned int j = 0; j < 4; ++j)
+                    {
+                        // Make sure that even the invalid nodes have a value of zero
+                        joint.v[j] = std::max(GetNodeIndex(skin->joints[joint.v[j]], nodes, nodeCount), 0);
+                    }
+                    mesh.mInfluences.push_back(joint);
+                    break;
+                }
+            }
+        }
     }
 
     cgltf_data* LoadGLTFFile(const char* filePath)
@@ -171,7 +238,7 @@ namespace gltf
             int parentIdx = helper::GetNodeIndex(node->parent, data->nodes, boneCount);
             result.parents[i] = parentIdx;
         }
-        return result;
+        return std::move(result);
     }
 
     // TODO: This needs to be optimized
@@ -292,6 +359,42 @@ namespace gltf
         result.UpdateInverseBindPose();
 
         return result;
+    }
+
+    // Let's assume for now that the gltf file has only one model/mesh
+    void LoadMeshes(std::vector<skin::AnimatedMesh>& meshes, cgltf_data* data)
+    {
+        cgltf_node* nodes = data->nodes;
+        unsigned int nodeCount = static_cast<unsigned int>(data->nodes_count);
+        for (unsigned int i = 0; i < nodeCount; ++i)
+        {
+            cgltf_node* node = &nodes[i];
+            if (node->mesh == nullptr || node->skin == nullptr)
+            {
+                continue;
+            }
+            unsigned int primitiveCount = static_cast<unsigned int>(node->mesh->primitives_count);
+            for (unsigned int j = 0; j < primitiveCount; ++j)
+            {
+                meshes.push_back(skin::AnimatedMesh());
+                skin::AnimatedMesh& mesh = meshes[meshes.size() - 1];
+                cgltf_primitive* primitive = &node->mesh->primitives[j];
+                unsigned int attributeCount = static_cast<unsigned int>(primitive->attributes_count);
+                for (unsigned int k = 0; k < attributeCount; ++k)
+                {
+                    cgltf_attribute* attribute = &primitive->attributes[k];
+                    helper::MeshFromAttributes(mesh, *attribute, node->skin, nodes, nodeCount);
+                }
+            
+                unsigned int indicesCount = static_cast<unsigned int>(primitive->indices->count);
+                mesh.mIndices.resize(indicesCount);
+                for (unsigned int k = 0; k < indicesCount; ++k)
+                {
+                    mesh.mIndices[k] = static_cast<unsigned int>(cgltf_accessor_read_index(primitive->indices, k));
+                }
+                mesh.UpdateGPUBuffers();
+            }
+        }
     }
 }
 

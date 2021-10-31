@@ -12,4 +12,5 @@ namespace gltf
     std::vector<std::string> LoadJointNames(cgltf_data* data);
     void LoadAnimationClips(std::vector<animation::Clip>& clips, cgltf_data* data);
     skin::Skeleton LoadSkeleton(cgltf_data* data);
+    void LoadMeshes(std::vector<skin::AnimatedMesh>& meshes, cgltf_data* data);
 }

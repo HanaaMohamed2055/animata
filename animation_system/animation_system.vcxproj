@@ -167,7 +167,8 @@
     <ClInclude Include="..\src\utils.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\src\Shaders\static.frag" />
+    <None Include="..\src\Shaders\lit.frag" />
+    <None Include="..\src\Shaders\skin.vert" />
     <None Include="..\src\Shaders\static.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

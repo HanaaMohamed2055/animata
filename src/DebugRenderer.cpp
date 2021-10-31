@@ -91,6 +91,7 @@ void DebugRenderer::Initialize()
             break;
         }
     }
+    gltf::FreeGLTFFile(data);
 }
 
 void DebugRenderer::Update(float inDeltaTime)

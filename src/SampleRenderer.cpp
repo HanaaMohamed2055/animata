@@ -9,7 +9,7 @@ using namespace math;
 void SampleRenderer::Initialize()
 {
     mRotation = 45.0f;
-    mShader = new Shader("D:/projects/animation_system/src/Shaders/static.vert", "D:/projects/animation_system/src/Shaders/static.frag");
+    mShader = new Shader("D:/projects/animation_system/src/Shaders/static.vert", "D:/projects/animation_system/src/Shaders/lit.frag");
     mDisplayTexture = new Texture("D:/projects/animation_system/assets/uv.png");
 
     std::vector<vec3> positions;

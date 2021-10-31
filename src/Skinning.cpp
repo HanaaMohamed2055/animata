@@ -77,24 +77,25 @@ namespace skin
 
         mSkinnedPositions.resize(vertexCount, vec3());
         mSkinnedNormals.resize(vertexCount, vec3());
-        animation::Pose& bindPose = skeleton.bindPose;
+        outPose.GetMatrixPalette(mPosePalette);
+        const auto& invPosePalette = skeleton.inverseBindPose;
 
+        math::mat4 finalSkinMatrix;
         for (unsigned int i = 0; i < vertexCount; ++i)
         {
             vec4& weights = mWeights[i];
             ivec4& joint = mInfluences[i];
 
-            math::Transform skin[4];
+            math::mat4 skin[4];
             for (unsigned int j = 0; j < 4; ++j)
             {
                 // Combine the inverse bind transform of the joint with the animated pose.
-                skin[j] = math::combine(outPose.GlobalTransform(joint.v[j]), inverse(bindPose.GlobalTransform(joint.v[j])));
-                math::vec3 p = math::TransformPoint(skin[j], mPositions[i]);
-                math::vec3 n = math::TransformVector(skin[j], mNormals[i]);
+                skin[j] = mPosePalette[joint.v[j]] * invPosePalette[joint.v[j]] * weights.v[j];
                 // blend between 4 influencing joints.
-                mSkinnedPositions[i] = mSkinnedPositions[i] + p * weights.v[j];
-                mSkinnedNormals[i] = mSkinnedNormals[i] + n * weights.v[j];
+                finalSkinMatrix = finalSkinMatrix + skin[j];
             }
+            mSkinnedPositions[i] = TransformPoint(finalSkinMatrix, mPositions[i]);
+            mSkinnedNormals[i] = TransformVector(finalSkinMatrix, mNormals[i]);
         }
         mPositionAttribs->Upload(mSkinnedPositions);
         mNormalAttribs->Upload(mSkinnedNormals);
