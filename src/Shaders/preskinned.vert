@@ -4,8 +4,7 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-uniform mat4 pose[120];
-uniform mat4 invBindPose[120];
+uniform mat4 animated[120];
 
 in vec3 position;
 in vec3 normal;
@@ -20,10 +19,10 @@ out vec2 uv;
 void main() {
     
     // Construct skin matrix from the 4 influencing joints
-    mat4 skin = (pose[joints.x] * invBindPose[joints.x]) * weights.x;
-    skin += (pose[joints.y] * invBindPose[joints.y]) * weights.y;
-    skin += (pose[joints.z] * invBindPose[joints.z]) * weights.z;
-    skin += (pose[joints.w] * invBindPose[joints.w]) * weights.w;
+    mat4 skin = animated[joints.x] * weights.x;
+    skin += animated[joints.y] * weights.y;
+    skin += animated[joints.z] * weights.z;
+    skin += animated[joints.w] * weights.w;
 
     gl_Position = projection * view * model * skin * vec4(position, 1.0);
 

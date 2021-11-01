@@ -67,7 +67,7 @@ namespace skin
         return *this;
     }
 
-    void AnimatedMesh::CPUSkin(Skeleton& skeleton, animation::Pose& outPose)
+    void AnimatedMesh::CPUSkin(std::vector<math::mat4>& animatedPose)
     {
         unsigned int vertexCount = static_cast<unsigned int>(mPositions.size());
         if (vertexCount == 0)
@@ -77,8 +77,6 @@ namespace skin
 
         mSkinnedPositions.resize(vertexCount, vec3());
         mSkinnedNormals.resize(vertexCount, vec3());
-        outPose.GetMatrixPalette(mPosePalette);
-        const auto& invPosePalette = skeleton.inverseBindPose;
 
         math::mat4 finalSkinMatrix;
         for (unsigned int i = 0; i < vertexCount; ++i)
@@ -88,10 +86,10 @@ namespace skin
 
             math::mat4 skin[4];
             // Combine the inverse bind transform of the joint with the animated pose.
-            skin[0] = mPosePalette[j.v[0]] * invPosePalette[j.v[0]] * w.v[0];
-            skin[1] = mPosePalette[j.v[1]] * invPosePalette[j.v[1]] * w.v[1];
-            skin[2] = mPosePalette[j.v[2]] * invPosePalette[j.v[2]] * w.v[2];
-            skin[3] = mPosePalette[j.v[3]] * invPosePalette[j.v[3]] * w.v[3];
+            skin[0] = animatedPose[j.v[0]] * w.v[0];
+            skin[1] = animatedPose[j.v[1]] * w.v[1];
+            skin[2] = animatedPose[j.v[2]] * w.v[2];
+            skin[3] = animatedPose[j.v[3]] * w.v[3];
 
             // Blend between 4 influencing joints.
             finalSkinMatrix = skin[0] + skin[1] + skin[2] + skin[3];

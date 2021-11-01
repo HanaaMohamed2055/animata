@@ -22,7 +22,7 @@ void SampleRenderer::Initialize()
     }
 
     mStaticShader = new Shader("D:/projects/animation_system/src/Shaders/static.vert", "D:/projects/animation_system/src/Shaders/lit.frag");
-    mSkinnedShader = new Shader("D:/projects/animation_system/src/Shaders/skin.vert", "D:/projects/animation_system/src/Shaders/lit.frag");
+    mSkinnedShader = new Shader("D:/projects/animation_system/src/Shaders/preskinned.vert", "D:/projects/animation_system/src/Shaders/lit.frag");
     mDiffuseTexture = new Texture("D:/projects/animation_system/assets/Woman.png");
 
     mGPUAnimInfo.animatedPose = mSkeleton.restPose;
@@ -52,11 +52,22 @@ void SampleRenderer::Update(float inDeltaTime)
     mCPUAnimInfo.playback = mClips[mCPUAnimInfo.clip].Sample(mCPUAnimInfo.animatedPose, mCPUAnimInfo.playback + inDeltaTime);
     mGPUAnimInfo.playback = mClips[mGPUAnimInfo.clip].Sample(mGPUAnimInfo.animatedPose, mGPUAnimInfo.playback + inDeltaTime);
 
-    for (auto& mesh : mCPUMeshes) {
-        mesh.CPUSkin(mSkeleton, mCPUAnimInfo.animatedPose);
+    mCPUAnimInfo.animatedPose.GetMatrixPalette(mCPUAnimInfo.posePalette);
+    for (unsigned int i = 0; i < mCPUAnimInfo.posePalette.size(); ++i)
+    {
+        mCPUAnimInfo.posePalette[i] = mCPUAnimInfo.posePalette[i] * mSkeleton.inverseBindPose[i];
+    }
+
+    for (auto& mesh : mCPUMeshes)
+    {
+        mesh.CPUSkin(mCPUAnimInfo.posePalette);
     }
 
     mGPUAnimInfo.animatedPose.GetMatrixPalette(mGPUAnimInfo.posePalette);
+    for (unsigned int i = 0; i < mGPUAnimInfo.posePalette.size(); ++i)
+    {
+        mGPUAnimInfo.posePalette[i] = mGPUAnimInfo.posePalette[i] * mSkeleton.inverseBindPose[i];
+    }
 }
 
 void SampleRenderer::Render(float inAspectRatio)
@@ -90,8 +101,7 @@ void SampleRenderer::Render(float inAspectRatio)
     uniform::Update<mat4>(mSkinnedShader->GetUniform("projection"), projection);
     uniform::Update<vec3>(mSkinnedShader->GetUniform("light"), vec3(1, 1, 1));
 
-    uniform::Update<mat4>(mSkinnedShader->GetUniform("pose"), mGPUAnimInfo.posePalette);
-    uniform::Update<mat4>(mSkinnedShader->GetUniform("invBindPose"), mSkeleton.inverseBindPose);
+    uniform::Update<mat4>(mSkinnedShader->GetUniform("animated"), mGPUAnimInfo.posePalette);
 
     mDiffuseTexture->Bind(mSkinnedShader->GetUniform("tex0"), 0);
     for (unsigned int i = 0, size = (unsigned int)mGPUMeshes.size(); i < size; ++i) {

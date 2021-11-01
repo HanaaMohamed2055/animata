@@ -47,7 +47,7 @@ namespace skin
         ~AnimatedMesh();
         AnimatedMesh& operator=(const AnimatedMesh&);
 
-        void CPUSkin(Skeleton& skeleton, animation::Pose& pose);
+        void CPUSkin(std::vector<math::mat4>& animatedPose);
         void UpdateGPUBuffers();
         void Bind(int position, int normals, int texcoord, int weight, int influence);
         void UnBind(int position, int normal, int texcoord, int weight, int influence);
