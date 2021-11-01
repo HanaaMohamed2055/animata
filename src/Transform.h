@@ -35,7 +35,7 @@ namespace math
             (fabs(t.scale.v[0]) < MY_EPSILON) ? 0.0f : 1 / t.scale.v[0],
             (fabs(t.scale.v[1]) < MY_EPSILON) ? 0.0f : 1 / t.scale.v[1],
             (fabs(t.scale.v[2]) < MY_EPSILON) ? 0.0f : 1 / t.scale.v[2]);
-        result.position = result.rotation * (result.scale  * (result.position * -1.0f));
+        result.position = result.rotation * (result.scale  * (t.position * -1.0f));
         
         return result;
     }
@@ -61,9 +61,9 @@ namespace math
         vec3 x = t.rotation * vec3(1, 0, 0);
         vec3 y = t.rotation * vec3(0, 1, 0);
         vec3 z = t.rotation * vec3(0, 0, 1);
-        x =  x * t.scale;
-        x =  y * t.scale;
-        x =  z * t.scale;
+        x =  x * t.scale.v[0];
+        y =  y * t.scale.v[1];
+        z =  z * t.scale.v[2];
         
         vec3 p = t.position;
         return mat4(x.v[0], x.v[1], x.v[2], 0,

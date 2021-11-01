@@ -73,6 +73,7 @@ void DebugRenderer::Initialize()
     mShader = new gfx::Shader(vs, ps);
     
     cgltf_data* data = gltf::LoadGLTFFile("D:/projects/animation_system/assets/Woman.gltf");
+    mSkeleton = gltf::LoadSkeleton(data);
     gltf::LoadAnimationClips(mClips, data);
 
     mRestPose = new DebugPose();

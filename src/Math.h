@@ -440,9 +440,9 @@ namespace math
         cofactor.cols[2].v[2] = M4_3x3MINOR(m, 0, 1, 3, 0, 1, 3);
         cofactor.cols[2].v[3] = -M4_3x3MINOR(m, 0, 1, 3, 0, 1, 2);
 
-        cofactor.cols[3].v[0] = M4_3x3MINOR(m, 0, 1, 2, 1, 2, 3);
+        cofactor.cols[3].v[0] = -M4_3x3MINOR(m, 0, 1, 2, 1, 2, 3);
         cofactor.cols[3].v[1] = M4_3x3MINOR(m, 0, 1, 2, 0, 2, 3);
-        cofactor.cols[3].v[2] = M4_3x3MINOR(m, 0, 1, 2, 0, 1, 3);
+        cofactor.cols[3].v[2] = -M4_3x3MINOR(m, 0, 1, 2, 0, 1, 3);
         cofactor.cols[3].v[3] = M4_3x3MINOR(m, 0, 1, 2, 0, 1, 2);
     
         transpose(cofactor);

@@ -3,6 +3,7 @@
 #include "Gfx.h"
 #include "Math.h"
 #include "Animation.h"
+#include "Skinning.h"
 
 struct DebugPose
 {
@@ -23,6 +24,7 @@ class DebugRenderer : public Application
     std::vector<animation::Clip> mClips;
     DebugPose* mRestPose;
     DebugPose* mCurrentPose;
+    skin::Skeleton mSkeleton;
     float mPlayBackTime;
 
 public:

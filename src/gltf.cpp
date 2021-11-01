@@ -265,12 +265,12 @@ namespace gltf
             unsigned int jointCount = (unsigned int)skin->joints_count;
             for (unsigned int j = 0; j < jointCount; ++j)
             {
+                cgltf_node* jointNode = skin->joints[j];
+                unsigned int jointIndex = helper::GetNodeIndex(jointNode, data->nodes, boneCount);
                 float* matrix = &(invBindMatrices[j * 16]);
                 math::mat4 invBindMatrix = math::mat4(matrix);
                 math::mat4 bindMatrix = inverse(invBindMatrix);
                 math::Transform bindTransform = TransformFromMatrix(bindMatrix);
-                cgltf_node* jointNode = skin->joints[j];
-                unsigned int jointIndex = helper::GetNodeIndex(jointNode, data->nodes, boneCount);
                 worldBindPoses[jointIndex] = bindTransform;
             }
         }
@@ -283,7 +283,9 @@ namespace gltf
             if (p >= 0)
             {
                 math::Transform parentTransform = worldBindPoses[p];
-                bindPose.joints[i] = math::combine(math::inverse(parentTransform), worldBindPoses[i]);
+                math::Transform currentTransform = worldBindPoses[i];
+                currentTransform = math::combine(math::inverse(parentTransform), currentTransform);
+                bindPose.joints[i] = currentTransform;
             }
         }
         return bindPose;
@@ -358,7 +360,7 @@ namespace gltf
         result.jointNames = LoadJointNames(data);
         result.UpdateInverseBindPose();
 
-        return result;
+        return std::move(result);
     }
 
     // Let's assume for now that the gltf file has only one model/mesh

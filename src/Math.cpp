@@ -76,11 +76,12 @@ namespace math
         {
             return;
         }
+        float i_len = 1.0f / len;
 
-        q.x /= len;
-        q.y /= len;
-        q.z /= len;
-        q.w /= len;
+        q.x *= i_len;
+        q.y *= i_len;
+        q.z *= i_len;
+        q.w *= i_len;
     }
 
     Quaternion normalized(const Quaternion& q)
@@ -191,7 +192,9 @@ namespace math
 
         Quaternion u2u = quaternionFromTo(objectUp, u);
 
-        Quaternion result = normalized(WorldToObject * u2u);
+        Quaternion result = WorldToObject * u2u;
+
+        normalize(result);
 
         return result;
     }
