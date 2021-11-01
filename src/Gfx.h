@@ -39,10 +39,20 @@ namespace gfx
         {
             std::string vertexShader = utils::ReadFile(vertexShaderPath);
             std::string fragmentShader = utils::ReadFile(fragmentShaderPath);
-            Shader(vertexShader, fragmentShader);
+            CompileFromSource(vertexShader, fragmentShader);
         }
 
         Shader(const std::string& vertexShader, const std::string& fragmentShader)
+        {
+            CompileFromSource(vertexShader, fragmentShader);
+        }
+
+        ~Shader()
+        {
+            glDeleteProgram(handle);
+        }
+
+        void CompileFromSource(const std::string& vertexShader, const std::string& fragmentShader)
         {
             // Compile
             unsigned int vHandle = CompileShader(vertexShader.c_str(), "Vertex");
@@ -124,17 +134,12 @@ namespace gfx
             }
         }
 
-        ~Shader()
-        {
-            glDeleteProgram(handle);
-        }
-
         inline void Bind()
         {
             glUseProgram(handle);
         }
 
-        inline void unBind()
+        inline void UnBind()
         {
             glUseProgram(GL_ZERO);
         }
@@ -228,9 +233,9 @@ namespace gfx
         }
 
         template<typename T>
-        void Update(unsigned int slot, const std::vector<T>& data)
+        void Update(unsigned int slot, std::vector<T>& data)
         {
-            Update(slot, data.data(), data.size());
+            Update(slot, data.data(), static_cast<unsigned int>(data.size()));
         }
     };
 

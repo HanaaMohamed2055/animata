@@ -49,10 +49,8 @@ namespace skin
 
         void CPUSkin(Skeleton& skeleton, animation::Pose& pose);
         void UpdateGPUBuffers();
-        void Bind(unsigned int position, unsigned int normals, unsigned int texcoord,
-            unsigned int weight, unsigned int influence);
-        void UnBind(unsigned int position, unsigned int normal, unsigned int texcoord,
-            unsigned int weight, unsigned int influence);
+        void Bind(int position, int normals, int texcoord, int weight, int influence);
+        void UnBind(int position, int normal, int texcoord, int weight, int influence);
         void Draw();
         void DrawInstanced(unsigned int instanceCount);
     };

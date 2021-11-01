@@ -60,8 +60,8 @@ namespace skin
         mPositions = other.mPositions;
         mNormals = other.mNormals;
         mTextureCoordinates = other.mTextureCoordinates;
-        mWeightAttribs = other.mWeightAttribs;
-        mInfluenceAttribs = other.mInfluenceAttribs;
+        mWeights = other.mWeights;
+        mInfluences = other.mInfluences;
         mIndices = other.mIndices;
         UpdateGPUBuffers();
         return *this;
@@ -83,17 +83,18 @@ namespace skin
         math::mat4 finalSkinMatrix;
         for (unsigned int i = 0; i < vertexCount; ++i)
         {
-            vec4& weights = mWeights[i];
-            ivec4& joint = mInfluences[i];
+            vec4& w = mWeights[i];
+            ivec4& j = mInfluences[i];
 
             math::mat4 skin[4];
-            for (unsigned int j = 0; j < 4; ++j)
-            {
-                // Combine the inverse bind transform of the joint with the animated pose.
-                skin[j] = mPosePalette[joint.v[j]] * invPosePalette[joint.v[j]] * weights.v[j];
-                // blend between 4 influencing joints.
-                finalSkinMatrix = finalSkinMatrix + skin[j];
-            }
+            // Combine the inverse bind transform of the joint with the animated pose.
+            skin[0] = mPosePalette[j.v[0]] * invPosePalette[j.v[0]] * w.v[0];
+            skin[1] = mPosePalette[j.v[1]] * invPosePalette[j.v[1]] * w.v[1];
+            skin[2] = mPosePalette[j.v[2]] * invPosePalette[j.v[2]] * w.v[2];
+            skin[3] = mPosePalette[j.v[3]] * invPosePalette[j.v[3]] * w.v[3];
+
+            // Blend between 4 influencing joints.
+            finalSkinMatrix = skin[0] + skin[1] + skin[2] + skin[3];
             mSkinnedPositions[i] = TransformPoint(finalSkinMatrix, mPositions[i]);
             mSkinnedNormals[i] = TransformVector(finalSkinMatrix, mNormals[i]);
         }
@@ -105,77 +106,81 @@ namespace skin
     {
         if (!mPositions.empty())
         {
-            if (!mPositionAttribs)
-            {
-                mPositionAttribs = new VertexBuffer<vec3>({});
-            }
             mPositionAttribs->Upload(mPositions);
         }
 
         if (!mNormals.empty())
         {
-            if (!mNormalAttribs)
-            {
-                mNormalAttribs = new VertexBuffer<vec3>({});
-            }
             mNormalAttribs->Upload(mNormals);
         }
 
         if (!mTextureCoordinates.empty())
         {
-            if (!mTextureAttribs)
-            {
-                mTextureAttribs = new VertexBuffer<vec2>({});
-            }
             mTextureAttribs->Upload(mTextureCoordinates);
         }
 
         if (!mWeights.empty())
         {
-            if (!mWeightAttribs)
-            {
-                mWeightAttribs = new VertexBuffer<vec4>({});
-            }
             mWeightAttribs->Upload(mWeights);
         }
 
         if (!mInfluences.empty())
         {
-            if (!mInfluenceAttribs)
-            {
-                mInfluenceAttribs = new VertexBuffer<ivec4>({});
-            }
             mInfluenceAttribs->Upload(mInfluences);
         }
 
         if (!mIndices.empty())
         {
-            if (!mIndexBuffer)
-            {
-                mIndexBuffer = new IndexBuffer({});
-            }
             mIndexBuffer->Update(mIndices);
         }
     }
 
-    void AnimatedMesh::Bind(unsigned int position, unsigned int normal, unsigned int texcoord,
-        unsigned int weight, unsigned int influence)
+    void AnimatedMesh::Bind(int position, int normal, int texcoord, int weight, int influence)
     {
-        mPositionAttribs->Bind(position);
-        mNormalAttribs->Bind(normal);
-        mTextureAttribs->Bind(texcoord);
-        mWeightAttribs->Bind(weight);
-        mInfluenceAttribs->Bind(influence);
+        if (position >= 0)
+        {
+            mPositionAttribs->Bind(position);
+        }
+        if (normal >= 0)
+        {
+            mNormalAttribs->Bind(normal);
+        }
+        if (texcoord >= 0)
+        {
+            mTextureAttribs->Bind(texcoord);
+        }
+        if (weight >= 0)
+        {
+            mWeightAttribs->Bind(weight);
+        }
+        if (influence >= 0)
+        {
+            mInfluenceAttribs->Bind(influence);
+        }
     }
 
-    void AnimatedMesh::UnBind(unsigned int position, unsigned int normal, unsigned int texcoord,
-        unsigned int weight, unsigned int influence)
+    void AnimatedMesh::UnBind(int position, int normal, int texcoord, int weight, int influence)
     {
-        mPositionAttribs->UnBind(position);
-        mNormalAttribs->Bind(normal);
-        mTextureAttribs->Bind(texcoord);
-        mWeightAttribs->Bind(weight);
-        mInfluenceAttribs->Bind(influence);
+        if (position >= 0)
+        {
+            mPositionAttribs->UnBind(position);
+        }
+        if (normal >= 0)
+        {
+            mNormalAttribs->Bind(normal);
+        }
+        if (texcoord >= 0)
+        {
+            mTextureAttribs->Bind(texcoord);
+        }
+        if (weight >= 0)
+        {
+            mWeightAttribs->Bind(weight);
+        }
+        if (influence >= 0)
+        {
+            mInfluenceAttribs->Bind(influence);
+        }
     }
 
     void AnimatedMesh::Draw()

@@ -39,7 +39,7 @@ void DebugPose::Draw(gfx::draw::DRAW_MODE drawMode, gfx::Shader* shader, const m
     gfx::draw::Draw(static_cast<unsigned int>(mPoints.size()), drawMode);
 
     mVB->UnBind(shader->GetAttribute("position"));
-    shader->unBind();
+    shader->UnBind();
 }
 
 DebugPose::~DebugPose()

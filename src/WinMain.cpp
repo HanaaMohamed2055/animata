@@ -87,8 +87,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
 {
-    gApp = new DebugRenderer();
-
     WNDCLASSEX wndClass;
     wndClass.cbSize = sizeof(WNDCLASSEX);
     wndClass.style = CS_VREDRAW | CS_HREDRAW;
@@ -196,6 +194,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     ShowWindow(hwnd, SW_SHOW);
     UpdateWindow(hwnd);
+    gApp = new SampleRenderer();
     gApp->Initialize();
 
     DWORD lastTick = GetTickCount();

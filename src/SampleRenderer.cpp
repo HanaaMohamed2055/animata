@@ -1,5 +1,6 @@
 #include "SampleRenderer.h"
 #include "Camera.h"
+#include "gltf.h"
 
 using namespace gfx;
 using namespace math;
@@ -8,83 +9,106 @@ using namespace math;
 
 void SampleRenderer::Initialize()
 {
-    mRotation = 45.0f;
-    mShader = new Shader("D:/projects/animation_system/src/Shaders/static.vert", "D:/projects/animation_system/src/Shaders/lit.frag");
-    mDisplayTexture = new Texture("D:/projects/animation_system/assets/uv.png");
+    cgltf_data* gltf = gltf::LoadGLTFFile("D:/projects/animation_system/assets/Woman.gltf");
+    gltf::LoadMeshes(mCPUMeshes, gltf);
+    mSkeleton = gltf::LoadSkeleton(gltf);
+    gltf::LoadAnimationClips(mClips, gltf);
+    gltf::FreeGLTFFile(gltf);
 
-    std::vector<vec3> positions;
-    positions.push_back(vec3(-1, -1, 0));
-    positions.push_back(vec3(-1, 1, 0));
-    positions.push_back(vec3(1, -1, 0));
-    positions.push_back(vec3(1, 1, 0));
-    mVertexPositions = new VertexBuffer<vec3>(positions);
+    mGPUMeshes = mCPUMeshes;
+    for (auto& mesh : mGPUMeshes)
+    {
+        mesh.UpdateGPUBuffers();
+    }
 
-    std::vector<unsigned int> indices;
-    indices.push_back(0);
-    indices.push_back(1);
-    indices.push_back(2);
-    indices.push_back(2);
-    indices.push_back(1);
-    indices.push_back(3);
-    mIndexBuffer = new IndexBuffer(indices);
+    mStaticShader = new Shader("D:/projects/animation_system/src/Shaders/static.vert", "D:/projects/animation_system/src/Shaders/lit.frag");
+    mSkinnedShader = new Shader("D:/projects/animation_system/src/Shaders/skin.vert", "D:/projects/animation_system/src/Shaders/lit.frag");
+    mDiffuseTexture = new Texture("D:/projects/animation_system/assets/Woman.png");
 
-    std::vector<vec3> normals;
-    normals.resize(4, vec3(0, 0, 1));
-    mVertexNormals = new VertexBuffer<vec3>(normals);
+    mGPUAnimInfo.animatedPose = mSkeleton.restPose;
+    mGPUAnimInfo.posePalette.resize(mGPUAnimInfo.animatedPose.Size());
 
-    std::vector<vec2> uvs;
-    uvs.push_back(vec2(0, 0));
-    uvs.push_back(vec2(0, 1));
-    uvs.push_back(vec2(1, 0));
-    uvs.push_back(vec2(1, 1));
-    mVertexTexCoords = new VertexBuffer<vec2>(uvs);
+    mCPUAnimInfo.animatedPose = mSkeleton.restPose;
+    mCPUAnimInfo.posePalette.resize(mCPUAnimInfo.animatedPose.Size());
+
+    mGPUAnimInfo.model.position = vec3(-2, 0, 0);
+    mCPUAnimInfo.model.position = vec3(2, 0, 0);
+
+    for (unsigned int i = 0; i < mClips.size(); ++i)
+    {
+        if (mClips[i].name == "Walking")
+        {
+            mCPUAnimInfo.clip = i;
+        }
+        else if (mClips[i].name == "Running")
+        {
+            mGPUAnimInfo.clip = i;
+        }
+    }
 }
 
 void SampleRenderer::Update(float inDeltaTime)
 {
-    mRotation += inDeltaTime * 45.0f;
-    while (mRotation > 360.0f) {
-        mRotation -= 360.0f;
+    mCPUAnimInfo.playback = mClips[mCPUAnimInfo.clip].Sample(mCPUAnimInfo.animatedPose, mCPUAnimInfo.playback + inDeltaTime);
+    mGPUAnimInfo.playback = mClips[mGPUAnimInfo.clip].Sample(mGPUAnimInfo.animatedPose, mGPUAnimInfo.playback + inDeltaTime);
+
+    for (auto& mesh : mCPUMeshes) {
+        mesh.CPUSkin(mSkeleton, mCPUAnimInfo.animatedPose);
     }
+
+    mGPUAnimInfo.animatedPose.GetMatrixPalette(mGPUAnimInfo.posePalette);
 }
 
 void SampleRenderer::Render(float inAspectRatio)
 {
     mat4 projection = transposed(perspective(60.0f, inAspectRatio, 0.01f, 1000.0f));
-    mat4 view = lookAt(vec3(0, 0, -5), vec3(0, 0, 0), vec3(0, 1, 0));
-    mat4 model = MatrixFromQuaternion(quaternionFromAngleAxis(mRotation * DEG2RAD, vec3(0, 0, 1)));
+    mat4 view = lookAt(vec3(0, 5, 7), vec3(0, 3, 0), vec3(0, 1, 0));
+    mat4 model;
 
-    mShader->Bind();
+    // CPU Skinned Mesh
+    model = MatrixFromTransform(mCPUAnimInfo.model);
+    mStaticShader->Bind();
+    uniform::Update<mat4>(mStaticShader->GetUniform("model"), model);
+    uniform::Update<mat4>(mStaticShader->GetUniform("view"), view);
+    uniform::Update<mat4>(mStaticShader->GetUniform("projection"), projection);
+    uniform::Update<vec3>(mStaticShader->GetUniform("light"), vec3(1, 1, 1));
 
-    mVertexPositions->Bind(mShader->GetAttribute("position"));
-    mVertexNormals->Bind(mShader->GetAttribute("normal"));
-    mVertexTexCoords->Bind(mShader->GetAttribute("texCoord"));
+    mDiffuseTexture->Bind(mStaticShader->GetUniform("tex0"), 0);
+    for (unsigned int i = 0, size = (unsigned int)mCPUMeshes.size(); i < size; ++i) {
+        mCPUMeshes[i].Bind(mStaticShader->GetAttribute("position"), mStaticShader->GetAttribute("normal"), mStaticShader->GetAttribute("texCoord"), -1, -1);
+        mCPUMeshes[i].Draw();
+        mCPUMeshes[i].UnBind(mStaticShader->GetAttribute("position"), mStaticShader->GetAttribute("normal"), mStaticShader->GetAttribute("texCoord"), -1, -1);
+    }
+    mDiffuseTexture->UnBind(0);
+    mStaticShader->UnBind();
 
-    uniform::Update<mat4>(mShader->GetUniform("model"), model);
-    uniform::Update<mat4>(mShader->GetUniform("view"), view);
-    uniform::Update<mat4>(mShader->GetUniform("projection"), projection);
+    // GPU Skinned Mesh
+    model = MatrixFromTransform(mGPUAnimInfo.model);
+    mSkinnedShader->Bind();
+    uniform::Update<mat4>(mSkinnedShader->GetUniform("model"), model);
+    uniform::Update<mat4>(mSkinnedShader->GetUniform("view"), view);
+    uniform::Update<mat4>(mSkinnedShader->GetUniform("projection"), projection);
+    uniform::Update<vec3>(mSkinnedShader->GetUniform("light"), vec3(1, 1, 1));
 
-    uniform::Update<vec3>(mShader->GetUniform("light"), vec3(0, 0, 1));
+    uniform::Update<mat4>(mSkinnedShader->GetUniform("pose"), mGPUAnimInfo.posePalette);
+    uniform::Update<mat4>(mSkinnedShader->GetUniform("invBindPose"), mSkeleton.inverseBindPose);
 
-    mDisplayTexture->Bind(mShader->GetUniform("tex0"), 0);
-
-    draw::Draw(*mIndexBuffer, draw::DRAW_MODE::TRIANGLES);
-
-    mDisplayTexture->UnBind(0);
-
-    mVertexPositions->UnBind(mShader->GetAttribute("position"));
-    mVertexNormals->UnBind(mShader->GetAttribute("normal"));
-    mVertexTexCoords->UnBind(mShader->GetAttribute("texCoord"));
-
-    mShader->unBind();
+    mDiffuseTexture->Bind(mSkinnedShader->GetUniform("tex0"), 0);
+    for (unsigned int i = 0, size = (unsigned int)mGPUMeshes.size(); i < size; ++i) {
+        mGPUMeshes[i].Bind(mSkinnedShader->GetAttribute("position"), mSkinnedShader->GetAttribute("normal"), mSkinnedShader->GetAttribute("texCoord"), mSkinnedShader->GetAttribute("weights"), mSkinnedShader->GetAttribute("joints"));
+        mGPUMeshes[i].Draw();
+        mGPUMeshes[i].UnBind(mSkinnedShader->GetAttribute("position"), mSkinnedShader->GetAttribute("normal"), mSkinnedShader->GetAttribute("texCoord"), mSkinnedShader->GetAttribute("weights"), mSkinnedShader->GetAttribute("joints"));
+    }
+    mDiffuseTexture->UnBind(0);
+    mSkinnedShader->UnBind();
 }
 
 void SampleRenderer::Shutdown()
 {
-    delete mShader;
-    delete mDisplayTexture;
-    delete mVertexPositions;
-    delete mVertexNormals;
-    delete mVertexTexCoords;
-    delete mIndexBuffer;
+    delete mStaticShader;
+    delete mDiffuseTexture;
+    delete mSkinnedShader;
+    mClips.clear();
+    mCPUMeshes.clear();
+    mGPUMeshes.clear();
 }
