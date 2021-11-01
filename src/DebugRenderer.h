@@ -24,6 +24,7 @@ class DebugRenderer : public Application
     std::vector<animation::Clip> mClips;
     DebugPose* mRestPose;
     DebugPose* mCurrentPose;
+    DebugPose* mBindPose;
     skin::Skeleton mSkeleton;
     float mPlayBackTime;
 

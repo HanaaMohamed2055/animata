@@ -78,10 +78,11 @@ void DebugRenderer::Initialize()
 
     mRestPose = new DebugPose();
     mCurrentPose = new DebugPose();
+    mBindPose = new DebugPose();
 
-    animation::Pose restPose = gltf::LoadRestPose(data);
-    mRestPose->Update(restPose);
-    mCurrentPose->Update(restPose);
+    mRestPose->Update(mSkeleton.restPose);
+    mCurrentPose->Update(mSkeleton.restPose);
+    mBindPose->Update(mSkeleton.bindPose);
 
     mCurrentClip = 0;
     for (unsigned int i = 0; i < mClips.size(); ++i)
@@ -104,11 +105,12 @@ void DebugRenderer::Update(float inDeltaTime)
 void DebugRenderer::Render(float inAspectRatio)
 {
     mat4 projection = transposed(perspective(60.0f, inAspectRatio, 0.01f, 1000.0f));
-    mat4 view = lookAt(vec3(0, 4, 7), vec3(0, 4, 0), vec3(0, 1, 0));
+    mat4 view = lookAt(vec3(0, 4, -7), vec3(0, 4, 0), vec3(0, 1, 0));
     mat4 mvp = projection * view;
 
     mRestPose->Draw(gfx::draw::DRAW_MODE::LINES, mShader, vec3(1, 0, 0), mvp);
     mCurrentPose->Draw(gfx::draw::DRAW_MODE::LINES, mShader, vec3(0, 0, 1), mvp);
+    mBindPose->Draw(gfx::draw::DRAW_MODE::LINES, mShader, vec3(0, 1, 0), mvp);
 }
 
 void DebugRenderer::Shutdown()
@@ -116,5 +118,6 @@ void DebugRenderer::Shutdown()
     delete mShader;
     delete mRestPose;
     delete mCurrentPose;
+    delete mBindPose;
     mClips.clear();
 }
