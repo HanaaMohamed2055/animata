@@ -4,6 +4,7 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+// TODO-hanaa: use a structured buffer instead
 uniform mat4 animated[120];
 
 in vec3 position;

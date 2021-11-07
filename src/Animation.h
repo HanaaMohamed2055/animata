@@ -96,7 +96,10 @@ namespace animation
     template <typename T>
     struct Track
     {
+        constexpr static inline unsigned int samplerRate = 60;
         std::vector<Frame<T>> frames;
+        // Index lookup table
+        std::vector<unsigned int> sampledFrames;
         INTERPOLATION interpolationKind;
         
         Track(INTERPOLATION kind = INTERPOLATION::LINEAR)
@@ -173,6 +176,47 @@ namespace animation
             return value;
         }
 
+        // Sample the animation clip at fixed time intervals.
+        // Record the frame before the animation time for each time interval
+        // Sampling rate is context-dependent, stick to 60 samples per second
+        // Internal function to be called only at load time
+        inline void UpdateIndexLookupTable()
+        {
+            // TODO-hanaa: refactor this into an IsValid()
+            unsigned int frameCount = static_cast<unsigned int>(frames.size());
+            if (frameCount <= 1)
+            {
+                return;
+            }
+
+            const float duration = GetEndTime() - GetStartTime();
+            unsigned int sampleCount = static_cast<unsigned int>(duration * samplerRate);
+            sampledFrames.resize(sampleCount);
+
+            for (unsigned int i = 0; i < sampleCount; ++i)
+            {
+                const float t = i * 1.0f / (sampleCount - 1);
+                const float sampledTime = t * duration + GetStartTime();
+
+                unsigned int frameIndex = 0;
+                for (int j = frameCount - 1; j >= 0; --j)
+                {
+                    if (sampledTime >= frames[j].time)
+                    {
+                        frameIndex = j;
+                        if (frameIndex >= (frameCount - 2))
+                        {
+                            frameIndex = frameCount - 2;
+                        }
+                        break;
+                    }
+                }
+                sampledFrames[i] = frameIndex;
+            }
+        }
+
+        // Protected helper function
+        // Finds the frame index right before a given time
         inline int GetFrameIndex(float time, bool looping)
         {
             unsigned int size = (unsigned int)frames.size();
@@ -213,14 +257,19 @@ namespace animation
                 }
             }
 
-            for (int i = size - 1; i >= 0; --i)
+            const float duration = GetEndTime() - GetStartTime();
+            const float t = time / duration;
+            unsigned int sampleCount = static_cast<unsigned int>(samplerRate * duration);
+            unsigned int index = static_cast<unsigned int>(t * sampleCount);
+            if (index >= sampledFrames.size())
             {
-                if (time >= frames[i].time)
-                {
-                    result = i;
-                    break;
-                }
+                result = -1;
             }
+            else
+            {
+                result = sampledFrames[index];
+            }
+
             return result;
         }
 

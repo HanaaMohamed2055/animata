@@ -328,23 +328,25 @@ namespace gltf
                 cgltf_node* target = channel.target_node;
                 int nodeIndex = helper::GetNodeIndex(target, data->nodes, nodeCount);
 
-                // TODO : bone id for each transform track
                 if (channel.target_path == cgltf_animation_path_type_translation)
                 {
                     animation::VectorTrack& track = clips[i][nodeIndex].position;
                     helper::TrackFromChannel<math::vec3, 3>(track, channel);
+                    track.UpdateIndexLookupTable();
                 }
                 else if (channel.target_path == cgltf_animation_path_type_rotation)
                 {
                     animation::QuaternionTrack& track = clips[i][nodeIndex].rotation;
                     helper::TrackFromChannel<math::Quaternion, 4>(track, channel);
+                    track.UpdateIndexLookupTable();
                 }
                 else if (channel.target_path == cgltf_animation_path_type_scale)
                 {
                     animation::VectorTrack& track = clips[i][nodeIndex].scale;
                     helper::TrackFromChannel<math::vec3, 3>(track, channel);
+                    track.UpdateIndexLookupTable();
                 }
-                // TODO- weights
+                // TODO-weights?
             }
             clips[i].RecalculateDuration();
             clips[i].looping = true;
